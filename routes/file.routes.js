@@ -7,14 +7,15 @@ const fileController = require('../controllers/fileController');
 //router.post('', authMiddleware, fileController.createDir);
 //router.post('/upload', authMiddleware, fileController.uploadFile);
 router.post(
-   '/avatar',
+   '/profile/avatar',
    authMiddleware,
    //upload.any(),
    fileController.uploadAvatar
 );
-//router.get('', authMiddleware, fileController.getFiles);
+router.get('/books/book', authMiddleware, fileController.getPdf);
+router.get('/books/list', authMiddleware, fileController.fileList);
 //router.get('/download', authMiddleware, fileController.downloadFile);
 //router.get('/search', authMiddleware, fileController.searchFile);
 //router.delete('/', authMiddleware, fileController.deleteFile);
-router.delete('/avatar', authMiddleware, fileController.deleteAvatar);
+router.delete('/profile/avatar', authMiddleware, fileController.deleteAvatar);
 module.exports = router;

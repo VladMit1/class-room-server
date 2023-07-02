@@ -5,8 +5,11 @@ const File = require('../models/File');
 require('dotenv').config();
 
 const stream = require('stream');
+const { Transform } = require('stream');
+
 const path = require('path');
 const { google } = require('googleapis');
+const { error } = require('console');
 const KEY_FILE_PATH = path.join(__dirname, '../api-google.json');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const auth = new google.auth.GoogleAuth({
@@ -138,6 +141,7 @@ class FileController {
          res.status(500).json({ message: 'Download error' });
       }
    }
+
    async deleteFile(req, res) {
       try {
          const file = await File.findOne({
@@ -164,6 +168,94 @@ class FileController {
          return res.status(400).json({ message: 'Search error' });
       }
    }
+   async fileList(req, res) {
+      try {
+         const resp = await driveService.files.list({
+            q: "'1n9tDhHRyYSUmeP2LRd9aZHBxo0If29Da' in parents",
+            pageSize: 20,
+            fields:
+               'nextPageToken, files(id, name, mimeType, createdTime, parents)'
+         });
+         const files = resp.data.files;
+         const fileArray = [];
+         if (files.length) {
+            const fileDisplay = [];
+            const fileId = [];
+            const mimeType = [];
+            const parents = [];
+            for (let i = 0; i < files.length; i++) {
+               fileDisplay.push(files[i].name);
+               fileId.push(files[i].id);
+               mimeType.push(files[i].mimeType);
+               parents.push(files[i].parents);
+            }
+            for (let y = 0; y < fileDisplay.length; y++) {
+               fileArray.push({
+                  file: fileDisplay[y],
+                  id: fileId[y],
+                  type: mimeType[y],
+                  parents: parents[y]
+               });
+            }
+         }
+         res.json(fileArray);
+      } catch (error) {}
+   }
+
+   async getPdf(req, res) {
+      try {
+         const fileList = [];
+         let NextPageToken = '';
+         do {
+            const params = {
+               q: `'${req.query.id}' in parents`,
+               orderBy: 'name',
+               pageToken: NextPageToken || '',
+               pageSize: 1000,
+               fields: 'nextPageToken, files(id, name,parents)'
+            };
+            const testing = await driveService.files.list(params);
+            Array.prototype.push.apply(fileList, testing.data.files);
+            NextPageToken = testing.data.nextPageToken;
+         } while (NextPageToken);
+         const regexStr = (string) => {
+            const reg = /[^\d]/g;
+            return parseInt(string.replace(reg, ''));
+         };
+
+         fileList.sort((a, b) => regexStr(a.name) - regexStr(b.name));
+
+         driveService.files.get(
+            {
+               fileId: fileList[req.query.page - 1].id,
+               alt: 'media',
+               supportsAllDrives: true
+            },
+            { responseType: 'stream' },
+            (error, { data }) => {
+               if (error) {
+                  return reject('The API returned an error: ' + error);
+               }
+               let buf = [];
+               data.on('data', (chunk) => {
+                  // put number page
+                  buf.push(chunk);
+               });
+
+               data.on('end', function () {
+                  const buffer = Buffer.concat(buf);
+                  // fs.writeFile("filename.pdf", buffer, err => console.log(err)); // For testing
+
+                  res.json(buffer);
+               });
+            }
+         );
+      } catch (e) {
+         console.log(e);
+         res.status(500).json({ message: 'Download error' });
+      }
+   }
+
    async uploadAvatar(req, res) {
       try {
          const file = req.files.file;

@@ -14,7 +14,7 @@ const cors = require('cors');
 const BASE_URL = process.env.BASE_URL_PORT;
 const corsOptions = {
    origin: [
-      'http://localhost:3000',
+      'http://localhost:5173',
       'https://class-room-gate-r0jjernaf-vladmit1.vercel.app/',
       'https://class-room-gate-git-master-vladmit1.vercel.app/',
       'https://class-room-gate.vercel.app/'
@@ -32,7 +32,7 @@ async function createServer() {
    app.use(cors(corsOptions));
    app.use('/api/auth', authRouter);
    app.use('/api/calendar', eventRouter);
-   app.use('/api/profile', fileRouter);
+   app.use('/api', fileRouter);
 
    try {
       mongoose.set('strictQuery', false);
