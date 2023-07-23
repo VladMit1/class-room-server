@@ -43,7 +43,7 @@ class UserController {
 
    async login(req, res) {
       try {
-         const { email, password } = req.body;
+         const { email, password, socket } = req.body;
          const user = await User.findOne({ email });
          if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -55,6 +55,10 @@ class UserController {
          const token = jwt.sign({ id: user.id }, SECRET_KEY, {
             expiresIn: '1h'
          });
+         await User.findByIdAndUpdate(user.id, {
+            $set: { socket: socket }
+         });
+
          return res.json({
             token,
             user: {
@@ -62,7 +66,8 @@ class UserController {
                email: user.email,
                avatar: user.avatar,
                userName: user.userName,
-               events: [...user.events]
+               events: [...user.events],
+               socket: socket
             }
          });
       } catch (e) {
@@ -74,10 +79,10 @@ class UserController {
    async authorization(req, res) {
       try {
          const user = await User.findOne({ _id: req.user.id });
-
          const token = jwt.sign({ id: user.id }, SECRET_KEY, {
             expiresIn: '1h'
          });
+
          return res.json({
             token,
             user: {
@@ -85,22 +90,13 @@ class UserController {
                email: user.email,
                avatar: user.avatar,
                userName: user.userName,
-               events: [...user.events]
+               events: [...user.events],
+               socket
             }
          });
       } catch (e) {
          console.log(e);
          res.send({ message: 'Server error' });
-      }
-   }
-   async getStudents(req, res) {
-      try {
-         const users = await User.find({});
-
-         return res.json(users);
-      } catch (error) {
-         console.log(error);
-         return res.status(500).json({ message: 'no one get events' });
       }
    }
 }

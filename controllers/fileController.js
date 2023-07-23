@@ -5,11 +5,11 @@ const File = require('../models/File');
 require('dotenv').config();
 
 const stream = require('stream');
-const { Transform } = require('stream');
+//const { Transform } = require('stream');
 
 const path = require('path');
 const { google } = require('googleapis');
-const { error } = require('console');
+//const { error } = require('console');
 const KEY_FILE_PATH = path.join(__dirname, '../api-google.json');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const auth = new google.auth.GoogleAuth({

@@ -8,7 +8,8 @@ const User = new Schema({
    userName: { type: String },
    avatar: { type: String },
    events: [{ type: Types.ObjectId, ref: 'Event' }],
-   library: [{ type: String }]
+   library: [{ type: String }],
+   socket: { type: String }
 });
 
 module.exports = model('User', User);
