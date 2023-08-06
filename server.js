@@ -32,6 +32,7 @@ const io = require('socket.io')(server, {
       methods: ['GET', 'POST']
    }
 });
+let usersList = [];
 
 async function createServer() {
    app.use(filePathMiddleware(path.resolve(__dirname)));
@@ -41,19 +42,22 @@ async function createServer() {
    app.use(express.urlencoded({ extended: true }));
    app.use(express.static('static'));
    app.use(cors(corsOptions));
-   app.use('/api/calendar', eventRouter);
    app.use('/api', fileRouter);
+   app.use('/api/auth', authRouter);
+   app.use('/api/calendar', eventRouter);
    app.use('/api/chat', chatRouter);
 
    io.on('connection', (socket) => {
       console.log(`User was connected (${socket.id})`);
-      app.use('/api/auth', authRouter);
 
       socket.emit('me', socket.id);
-      socket.on('disconnect', () => {
-         socket.broadcast.emit('callEnded');
-         console.log('User has been disconnected');
+
+      socket.on('newUser', (data) => {
+         usersList.push(data);
+
+         io.emit('newUserResponse', usersList);
       });
+
       socket.on('callUser', (data) => {
          io.to(
             data.userToCall.emit('callUser', {
@@ -65,6 +69,13 @@ async function createServer() {
       });
       socket.on('answerCall', (data) => {
          io.to(data.to).emit('callAccepted'), data.signal;
+      });
+      socket.on('disconnect', () => {
+         usersList = usersList.filter((user) => user.socketID !== socket.id);
+         socket.broadcast.emit('callEnded');
+         io.emit('newUserResponse', usersList);
+         console.log('🔥: A user disconnected');
+         socket.disconnect();
       });
    });
 

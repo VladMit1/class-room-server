@@ -91,7 +91,7 @@ class UserController {
                avatar: user.avatar,
                userName: user.userName,
                events: [...user.events],
-               socket
+               socket: user.socket
             }
          });
       } catch (e) {
